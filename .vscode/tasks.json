@@ -1,0 +1,85 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Chiplab: Build",
+      "type": "shell",
+      "command": "make",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": {
+        "owner": "ca65",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.*)\\((\\d+)\\):\\s+(Error|Warning):\\s+(.*)$",
+          "file": 1, "line": 2, "severity": 3, "message": 4
+        }
+      }
+    },
+    {
+      "label": "Chiplab: Run on board",
+      "type": "shell",
+      "command": "make run",
+      "group": { "kind": "test", "isDefault": true },
+      "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Chiplab: Run with bus trace",
+      "type": "shell",
+      "command": "make trace",
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Chiplab: List serial ports",
+      "type": "shell",
+      "command": "make ports",
+      "problemMatcher": []
+    },
+    {
+      "label": "C64: Build .prg",
+      "type": "shell",
+      "command": "make c64",
+      "problemMatcher": {
+        "owner": "ca65",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.*)\\((\\d+)\\):\\s+(Error|Warning):\\s+(.*)$",
+          "file": 1, "line": 2, "severity": 3, "message": 4
+        }
+      }
+    },
+    {
+      "label": "C64: Run in VICE",
+      "type": "shell",
+      "command": "make c64-run",
+      "problemMatcher": []
+    },
+    {
+      "label": "Calc: Build (Chiplab + C64)",
+      "type": "shell",
+      "command": "make calc calc-c64",
+      "problemMatcher": {
+        "owner": "ca65",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.*)\\((\\d+)\\):\\s+(Error|Warning):\\s+(.*)$",
+          "file": 1, "line": 2, "severity": 3, "message": 4
+        }
+      }
+    },
+    {
+      "label": "Calc: Run on board",
+      "type": "shell",
+      "command": "make calc-run",
+      "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Calc: Run in VICE",
+      "type": "shell",
+      "command": "make calc-c64-run",
+      "problemMatcher": []
+    }
+  ]
+}

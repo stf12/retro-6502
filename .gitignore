@@ -1,0 +1,8 @@
+# generati: si ricreano con make / make setup
+build/
+.venv/
+__pycache__/
+*.o
+
+# macOS
+.DS_Store

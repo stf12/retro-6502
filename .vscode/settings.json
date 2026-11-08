@@ -1,0 +1,6 @@
+{
+  "files.associations": { "*.s": "ca65", "*.inc": "ca65", "*.cfg": "properties" },
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "editor.rulers": [40, 80],
+  "files.exclude": { "build": false, ".venv": true }
+}

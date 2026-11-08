@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug chiplab_run.py",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tools/chiplab_run.py",
+      "args": ["build/hello.bin", "--cycles", "2000"],
+      "python": "${workspaceFolder}/.venv/bin/python",
+       "console": "integratedTerminal"
+    }
+  ]
+}
