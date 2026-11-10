@@ -80,6 +80,31 @@
       "type": "shell",
       "command": "make calc-c64-run",
       "problemMatcher": []
-    }
+    },
+    {
+      "label": "Apple I: Build",
+      "type": "shell",
+      "command": "make apple1",
+      "problemMatcher": {
+        "owner": "ca65",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.*)\\((\\d+)\\):\\s+(Error|Warning):\\s+(.*)$",
+          "file": 1, "line": 2, "severity": 3, "message": 4
+        }
+      }
+    },
+    {
+      "label": "Apple I: Run in terminal (quick check)",
+      "type": "shell",
+      "command": "make apple1-sim",
+      "problemMatcher": []
+    },
+    {
+      "label": "Apple I: Run in MAME",
+      "type": "shell",
+      "command": "make apple1-run",
+      "problemMatcher": []
+    }    
   ]
 }

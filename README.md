@@ -118,3 +118,24 @@ arithmetic itself. On the C64 it is instant.
 - `build/hello.lst` shows the assembled bytes next to the source; handy with
   `make trace`.
 - Source for the board: https://github.com/EmulationOnline/chiplab (6502/)
+
+## Apple I version
+
+`apple1/hello.s` is the same program for the Apple I (MOS 6502, NMOS).
+It is loaded at `$0280`, prints through the Woz Monitor routine ECHO
+(`JSR $FFEF`, character with bit 7 set) and returns to the `\` prompt
+with `JMP $FF1F`. UPPERCASE only: the Apple I has no lowercase.
+
+| VS Code                          | Terminal          | What it does                                   |
+|----------------------------------|-------------------|------------------------------------------------|
+| Tasks → *Apple I: Build*         | `make apple1`     | builds `build/hello-apple1.bin` and `.woz`, prints the hex to type |
+| Tasks → *Apple I: Run in terminal* | `make apple1-sim` | runs it in py65 with a fake ECHO: instant check, no ROMs |
+| Tasks → *Apple I: Run in MAME*   | `make apple1-run` | starts MAME's Apple I and types the program into the Woz Monitor for you |
+
+- **MAME**: `brew install mame`. MAME does not include the Apple I ROMs
+  (Woz Monitor + character generator): put the `apple1.zip` ROM set in
+  `~/mame/roms`, or run `make apple1-run MAME_ROMPATH=/your/roms/folder`.
+- **By hand** (MAME, POM1 or a real Apple I / replica): at the `\` prompt
+  type the lines in `build/hello-apple1.woz`; the last line, `280R`,
+  starts the program.
+- `tools/bin2woz.py` works for any program: `python3 tools/bin2woz.py file.bin --addr 0x300`.

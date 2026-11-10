@@ -77,9 +77,34 @@ calc-run: build/calc.bin $(PY)
 
 calc-c64-run: build/calc-c64.prg
 	$(call vice,$<)
+# ---------------------------------------------------------------------------
+# Apple I 
+# ---------------------------------------------------------------------------
+MAME         ?= mame
+MAME_ROMPATH ?= $(HOME)/mame/roms
+
+build/hello-apple1.bin: apple1/hello.s apple1/apple1.cfg
+	@mkdir -p build
+	ca65 -l build/hello-apple1.lst -o build/hello-apple1.o $<
+	ld65 -C apple1/apple1.cfg -m build/hello-apple1.map -o $@ build/hello-apple1.o
+	@echo "Built $@ ($$(wc -c < $@ | tr -d ' ') bytes)"
+
+build/hello-apple1.woz: build/hello-apple1.bin tools/bin2woz.py
+	python3 tools/bin2woz.py $< -o $@
+
+apple1: build/hello-apple1.bin build/hello-apple1.woz
+	@cat build/hello-apple1.woz
+
+apple1-sim: build/hello-apple1.bin $(PY)
+	$(PY) tools/apple1_sim.py $<
+
+apple1-run: build/hello-apple1.bin
+	$(MAME) apple1 -rompath "$(MAME_ROMPATH)" -window -skip_gameinfo \
+	  -autoboot_delay 3 \
+	  -autoboot_command "$$(python3 tools/bin2woz.py $< --mame)"
 
 clean:
 	rm -rf build
 
-.PHONY: all run trace ports setup clean c64 c64-run calc calc-c64 calc-run calc-c64-run
+.PHONY: all run trace ports setup clean c64 c64-run calc calc-c64 calc-run calc-c64-run apple1 apple1-sim apple1-run 
 .PRECIOUS: build/%.o
