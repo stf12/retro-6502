@@ -2,8 +2,11 @@
 build/
 .venv/
 __pycache__/
-cfg/
 *.o
 
 # macOS
 .DS_Store
+
+# Apple 1
+apple1/programs
+apple1/basic.bin 

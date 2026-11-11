@@ -108,6 +108,93 @@ On the Chiplab each line takes roughly 10-25 s (about 1,500-3,500 cycles
 at ~170 cycles/s): turning numbers into text and back costs more than the
 arithmetic itself. On the C64 it is instant.
 
+## Apple I version
+
+`apple1/hello.s` is the same program for the Apple I (MOS 6502, NMOS).
+It is loaded at `$0280`, prints through the Woz Monitor routine ECHO
+(`JSR $FFEF`, character with bit 7 set) and returns to the `\` prompt
+with `JMP $FF1F`. UPPERCASE only: the Apple I has no lowercase.
+
+| VS Code                            | Terminal           | What it does |
+|------------------------------------|--------------------|--------------|
+| Tasks → *Apple I: Build*           | `make apple1`      | builds `build/hello-apple1.bin` and `.woz`, prints the hex to type |
+| Tasks → *Apple I: Run in terminal* | `make apple1-sim`  | runs it in py65 with a fake ECHO: instant check, no ROMs |
+| Tasks → *Apple I: Run in MAME*     | `make apple1-run`  | starts MAME's Apple I and types the program into the Woz Monitor |
+| —                                  | `make apple1-snap` | same, but loads it as a snapshot: starts instantly |
+
+- `apple1-sim` needs py65 in the project venv: `.venv/bin/pip install py65`.
+- **By hand** (MAME, POM1 or a real Apple I / replica): at the `\` prompt
+  type the lines in `build/hello-apple1.woz`; the last line, `280R`,
+  starts the program.
+- `tools/bin2woz.py` works for any program: `python3 tools/bin2woz.py file.bin --addr 0x300`.
+
+### MAME setup
+
+- **Install**: `brew install mame` (skip if you already have it).
+- **ROMs**: MAME does not include the Apple I firmware. Put the ROM sets,
+  still zipped, in `~/mame/roms` (the Makefile default):
+  - `apple1.zip`: `apple-a1.a1`, `apple-a2.a2` (Woz Monitor), `s2513.d2` (character generator)
+  - `a1cass.zip`: `apple-a3.3`, `apple-a4.4` (cassette interface card, fitted by default)
+
+  Check with `mame -verifyroms apple1 -rompath ~/mame/roms`.
+  A different folder: `make apple1-run MAME_ROMPATH=/your/roms/folder`.
+  MAME's own default `rompath` is just `roms`, i.e. relative to the folder
+  it is started from, so there is no global ROM folder to discover.
+- **Keyboard**: by default MAME maps key *positions* to a US keyboard.
+  On a British/International Mac keyboard `#` is Option+3, which reaches
+  the Apple I as `3`; `"` is on Shift+'. Easiest fix: press **Tab** for
+  MAME's menu and set *Keyboard Mode* to **Natural**.
+- **Quitting**: the Makefile passes `-ui_active`, so **Esc** quits MAME.
+  Otherwise close the window, or run `killall mame` from a terminal.
+
+## Apple I Integer BASIC
+
+Woz's original BASIC lives in the 4 KB of RAM at `$E000-$EFFF`.
+Put the 4096-byte image at `apple1/basic.bin` (or pass `BASIC=path`).
+The original, unpatched version ends with the bytes `0C E0`:
+`tail -c 2 apple1/basic.bin | od -t x1`. One source is `images/basic.rom`
+in https://github.com/jscrane/Apple1, whose `data/` folder also has
+ready-to-type programs: copy them to `apple1/programs/`.
+
+| VS Code                              | Terminal | What it does |
+|--------------------------------------|----------|--------------|
+| Tasks → *Apple I: BASIC*             | `make basic-run` | loads BASIC and starts it (`>` prompt) |
+| Tasks → *Apple I: BASIC program…*    | `make basic-prog PROG=apple1/programs/HAMURABI.txt` | starts BASIC, types the listing, then `RUN` |
+| Tasks → *Apple I: Machine code program…* | `make woz-prog PROG=apple1/programs/life.txt RUN=2000` | types Woz Monitor hex and runs it (`microchess.txt`: `RUN=300`) |
+
+How it works:
+
+- `tools/bin2snp.py` wraps a binary into a MAME snapshot (`.snp`:
+  `"LOAD:"` + big-endian start address + `"DATA:"` + bytes), which MAME
+  loads at startup with `-snapshot`.
+- MAME's apple1 snapshot loader has an off-by-one: a load that ends at
+  `$EFFF` is rejected ("Snapshot can't fit in RAM"). So the snapshot holds
+  `$E000-$EFFE` (`--trim-last`) and the last byte is typed in the Woz
+  Monitor (`EFFF: E0`) before `E000R`. The Monitor answers `EFFF: 00`,
+  the value *before* the write: that is normal.
+- `tools/txt2lua.py` turns a listing into a MAME Lua script
+  (`-autoboot_script`) that types it **one line at a time**. The Apple I
+  keyboard latches a single character: while BASIC is busy storing a line
+  and printing to the slow screen (~60 characters/s), a fast typist loses
+  the next character (`5030` becomes `030`). The script waits until a line
+  has been typed, then pauses `LINE_DELAY` frames (default 20, 60 = 1 s).
+  If characters still get lost: `make basic-prog ... LINE_DELAY=40`.
+- Long programs take minutes to type in, just like on the real machine.
+
+Integer BASIC cheat sheet:
+
+| Command | Effect |
+|---|---|
+| `LIST 1,100` | lists lines 1 to 100 (a comma, not a dash) |
+| `LIST 5020` | lists one line |
+| `40` | a line number alone deletes that line |
+| `CALL -256` | back to the Woz Monitor (`$FF00`); the program stays in memory |
+| `E2B3R` | (from the Monitor) warm start: back to BASIC, program kept |
+| `E000R` | (from the Monitor) cold start: BASIC from scratch, program erased |
+
+Integers only (-32767..32767), uppercase only; `#` and `<>` both mean
+"not equal".
+
 ## Notes
 
 - Upstream's `serial_rom.py` uses `stty -F`, which is Linux-only, and stops
@@ -118,24 +205,3 @@ arithmetic itself. On the C64 it is instant.
 - `build/hello.lst` shows the assembled bytes next to the source; handy with
   `make trace`.
 - Source for the board: https://github.com/EmulationOnline/chiplab (6502/)
-
-## Apple I version
-
-`apple1/hello.s` is the same program for the Apple I (MOS 6502, NMOS).
-It is loaded at `$0280`, prints through the Woz Monitor routine ECHO
-(`JSR $FFEF`, character with bit 7 set) and returns to the `\` prompt
-with `JMP $FF1F`. UPPERCASE only: the Apple I has no lowercase.
-
-| VS Code                          | Terminal          | What it does                                   |
-|----------------------------------|-------------------|------------------------------------------------|
-| Tasks → *Apple I: Build*         | `make apple1`     | builds `build/hello-apple1.bin` and `.woz`, prints the hex to type |
-| Tasks → *Apple I: Run in terminal* | `make apple1-sim` | runs it in py65 with a fake ECHO: instant check, no ROMs |
-| Tasks → *Apple I: Run in MAME*   | `make apple1-run` | starts MAME's Apple I and types the program into the Woz Monitor for you |
-
-- **MAME**: `brew install mame`. MAME does not include the Apple I ROMs
-  (Woz Monitor + character generator): put the `apple1.zip` ROM set in
-  `~/mame/roms`, or run `make apple1-run MAME_ROMPATH=/your/roms/folder`.
-- **By hand** (MAME, POM1 or a real Apple I / replica): at the `\` prompt
-  type the lines in `build/hello-apple1.woz`; the last line, `280R`,
-  starts the program.
-- `tools/bin2woz.py` works for any program: `python3 tools/bin2woz.py file.bin --addr 0x300`.

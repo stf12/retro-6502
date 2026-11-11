@@ -105,6 +105,42 @@
       "type": "shell",
       "command": "make apple1-run",
       "problemMatcher": []
+    },
+    {
+      "label": "Apple I: BASIC",
+      "type": "shell",
+      "command": "make basic-run",
+      "problemMatcher": []
+    },
+    {
+      "label": "Apple I: BASIC program…",
+      "type": "shell",
+      "command": "make basic-prog PROG=apple1/programs/${input:basicProg}",
+      "problemMatcher": []
+    },
+    {
+      "label": "Apple I: Machine code program…",
+      "type": "shell",
+      "command": "make woz-prog ${input:wozProg}",
+      "problemMatcher": []
     }    
-  ]
+  ],
+
+  "inputs": [
+    {
+      "id": "basicProg",
+      "type": "pickString",
+      "description": "Programma BASIC da caricare",
+      "options": ["HAMURABI.txt", "startrek.txt", "wumpus.txt", "Lunar.txt", "slots.txt", "reverse.txt", "21.TXT"]
+    },
+    {
+      "id": "wozProg",
+      "type": "pickString",
+      "description": "Programma in linguaggio macchina",
+      "options": [
+        { "label": "Life ($2000)",       "value": "PROG=apple1/programs/life.txt RUN=2000" },
+        { "label": "Microchess ($0300)", "value": "PROG=apple1/programs/microchess.txt RUN=300" }
+      ]
+    }    
+  ]  
 }
