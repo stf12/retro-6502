@@ -76,6 +76,13 @@
       "problemMatcher": []
     },
     {
+      "label": "Calc: Run with bus trace",
+      "type": "shell",
+      "command": "make calc-trace 2> trace.txt",
+      "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
       "label": "Calc: Run in VICE",
       "type": "shell",
       "command": "make calc-c64-run",

@@ -36,4 +36,7 @@ calc-run: build/calc.bin $(PY)
 calc-c64-run: build/calc-c64.prg
 	$(call vice,$<)
 
-.PHONY: calc calc-c64 calc-run calc-c64-run
+calc-trace: build/calc.bin $(PY)
+	$(PY) tools/chiplab_run.py --port $(PORT) --cycles 0 --trace $<
+
+.PHONY: calc calc-c64 calc-run calc-trace calc-c64-run
