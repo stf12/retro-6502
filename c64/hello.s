@@ -1,7 +1,7 @@
 ; ---------------------------------------------------------------------------
 ; Hello World for the Commodore 64 (MOS 6510, NMOS 6502 family)
 ;
-; Differences from src/hello.s (Chiplab, W65C02):
+; Differences from chiplab/hello.s (Chiplab, W65C02):
 ;   - no 65C02 instructions: BRA -> JMP (or a branch that is always taken)
 ;   - output goes through the KERNAL routine CHROUT at $FFD2:
 ;     load the character into A, JSR $FFD2, it appears on screen

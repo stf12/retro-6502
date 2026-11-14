@@ -1,6 +1,28 @@
-# Chiplab 6502 — Hello World (macOS / Apple Silicon + VS Code)
+# retro-6502
 
-## How this board works (read this first)
+6502 assembly for three machines: the EmulationOnline **Chiplab 6502**
+board, the **Commodore 64** and the **Apple I** (in MAME). Built on macOS
+(Apple Silicon) with cc65, from VS Code.
+
+## Layout
+
+```
+chiplab/     Chiplab board: hello.s, chiplab.cfg (memory map), io.s, chiplab.mk
+c64/         Commodore 64:  hello.s, io.s, c64.mk
+apple1/      Apple I:       hello.s, apple1.cfg, apple1.mk, programs/
+apps/        programs for more than one machine
+  calc/      16-bit calculator: portable code + calc.mk
+tools/       host tools: chiplab_run.py, Apple I converters and simulator
+docs/        notes, e.g. the Chiplab programming model
+Makefile     includes the .mk files above; run make from this folder
+```
+
+Each machine folder holds its own `io.s`: the basic I/O (read a key,
+print a character, quit) that every program in `apps/` links with.
+A program in `apps/` contains only portable code, so moving it to another
+machine means writing that machine's `io.s`, nothing else.
+
+## Chiplab board: how it works (read this first)
 
 The Chiplab board has **no RAM and no ROM**. A microcontroller clocks the
 W65C02 one cycle at a time and reports the bus over USB serial. Your Mac
@@ -50,7 +72,7 @@ make setup      # creates .venv with pyserial
 
 The port is auto-detected (`/dev/cu.usbmodem…` or `/dev/cu.usbserial-…`).
 Override with `make run PORT=/dev/cu.usbmodem1101`.
-Other programs: put `foo.s` in `src/` and run `make run PROG=foo`.
+Other programs: put `foo.s` in `chiplab/` and run `make run PROG=foo`.
 
 Expected output:
 
@@ -88,14 +110,14 @@ Spaces are allowed; an empty line ends the program. Range 0-65535.
 
 | File | What it holds |
 |---|---|
-| `calc/calc.s` | main loop: reads the line, calls the operation, prints, handles errors |
-| `calc/math16.s` | add, subtract, multiply (shift and add), divide (shift and subtract) |
-| `calc/numio.s` | decimal text to number and back, string printing |
-| `calc/io_chiplab.s` | Chiplab I/O: `$F004` keyboard, `$F001` console, `$F000` exit, reset vector |
-| `calc/io_c64.s` | C64 I/O through the KERNAL: CHRIN `$FFCF`, CHROUT `$FFD2` |
+| `apps/calc/calc.s` | main loop: reads the line, calls the operation, prints, handles errors |
+| `apps/calc/math16.s` | add, subtract, multiply (shift and add), divide (shift and subtract) |
+| `apps/calc/numio.s` | decimal text to number and back, string printing |
+| `chiplab/io.s` | Chiplab I/O: `$F004` keyboard, `$F001` console, `$F000` exit, reset vector |
+| `c64/io.s` | C64 I/O through the KERNAL: CHRIN `$FFCF`, CHROUT `$FFD2` |
 
-The math and number files are identical on both machines; only the
-`io_*.s` file changes. They use plain 6502 instructions only: the C64
+The files in `apps/calc/` are identical on both machines; only the
+machine's `io.s` changes. They use plain 6502 instructions only: the C64
 build is assembled as 6502, so a 65C02-only instruction would be an error.
 
 | VS Code | Terminal | What it does |
@@ -132,11 +154,11 @@ with `JMP $FF1F`. UPPERCASE only: the Apple I has no lowercase.
 
 - **Install**: `brew install mame` (skip if you already have it).
 - **ROMs**: MAME does not include the Apple I firmware. Put the ROM sets,
-  still zipped, in `~/mame/roms` (the Makefile default):
+  still zipped, in `~/Applications/mame/roms` (the default in `apple1/apple1.mk`):
   - `apple1.zip`: `apple-a1.a1`, `apple-a2.a2` (Woz Monitor), `s2513.d2` (character generator)
   - `a1cass.zip`: `apple-a3.3`, `apple-a4.4` (cassette interface card, fitted by default)
 
-  Check with `mame -verifyroms apple1 -rompath ~/mame/roms`.
+  Check with `mame -verifyroms apple1 -rompath ~/Applications/mame/roms`.
   A different folder: `make apple1-run MAME_ROMPATH=/your/roms/folder`.
   MAME's own default `rompath` is just `roms`, i.e. relative to the folder
   it is started from, so there is no global ROM folder to discover.
@@ -177,8 +199,8 @@ How it works:
   keyboard latches a single character: while BASIC is busy storing a line
   and printing to the slow screen (~60 characters/s), a fast typist loses
   the next character (`5030` becomes `030`). The script waits until a line
-  has been typed, then pauses `LINE_DELAY` frames (default 20, 60 = 1 s).
-  If characters still get lost: `make basic-prog ... LINE_DELAY=40`.
+  has been typed, then pauses `LINE_DELAY` frames (default 40, 60 = 1 s).
+  If characters still get lost: `make basic-prog ... LINE_DELAY=60`.
 - Long programs take minutes to type in, just like on the real machine.
 
 Integer BASIC cheat sheet:
@@ -200,8 +222,8 @@ Integers only (-32767..32767), uppercase only; `#` and `<>` both mean
 - Upstream's `serial_rom.py` uses `stty -F`, which is Linux-only, and stops
   after 200 cycles. `chiplab_run.py` uses pyserial instead, defaults to 2000
   cycles (`CYCLES=…`), and adds the console/exit ports.
-- Each cycle is a USB round-trip, so expect hundreds-to-low-thousands of
-  cycles per second — fine for learning, not for big loops.
+- Each cycle is a USB round-trip plus fixed delays in the board firmware:
+  about 170 cycles per second, measured — fine for learning, not for big loops.
 - `build/hello.lst` shows the assembled bytes next to the source; handy with
   `make trace`.
 - Source for the board: https://github.com/EmulationOnline/chiplab (6502/)

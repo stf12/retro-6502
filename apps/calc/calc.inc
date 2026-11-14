@@ -9,7 +9,7 @@ CR      = $0D                   ; RETURN key / end of input line
 ptr     = $FB                   ; 2 zero-page bytes for (ptr),y
                                 ; ($FB-$FC are free for users on the C64)
 
-; --- platform I/O: io_chiplab.s or io_c64.s, same names on both -------------
+; --- machine I/O: chiplab/io.s or c64/io.s, same names on both ------------
 .import io_getc                 ; A = next input character (line-buffered,
                                 ;     the line ends with CR)
 .import io_putc                 ; print the character in A (keeps X and Y)

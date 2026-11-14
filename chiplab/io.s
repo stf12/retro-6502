@@ -1,5 +1,8 @@
 ; ---------------------------------------------------------------------------
-; io_chiplab.s - calculator I/O for the Chiplab board (W65C02)
+; chiplab/io.s - basic I/O for the Chiplab board (W65C02)
+;
+; Shared by every program in apps/: keyboard, console, exit, plus the
+; startup code and the reset vector.
 ;
 ; Memory-mapped "devices" emulated by tools/chiplab_run.py on the Mac:
 ;   $F001 CONSOLE  write: print a character

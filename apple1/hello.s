@@ -1,7 +1,7 @@
 ; ---------------------------------------------------------------------------
 ; Hello World for the Apple I (MOS 6502, NMOS)
 ;
-; Differences from src/hello.s (Chiplab) and c64/hello.s (C64):
+; Differences from chiplab/hello.s (Chiplab) and c64/hello.s (C64):
 ;   - output goes through the Woz Monitor routine ECHO at $FFEF:
 ;     load the character into A, JSR $FFEF, it appears on screen
 ;   - the Apple I display uses 7-bit ASCII, but the Woz Monitor works

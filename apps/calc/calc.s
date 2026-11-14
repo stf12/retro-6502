@@ -5,8 +5,8 @@
 ;     1234*56      300+45      1000/7      90-12
 ; Spaces are allowed. An empty line ends the program.
 ;
-; The same source runs on the Chiplab (with io_chiplab.s) and on the C64
-; (with io_c64.s). On the C64 this file must be linked FIRST: its first
+; The same source runs on the Chiplab (with chiplab/io.s) and on the C64
+; (with c64/io.s). On the C64 this file must be linked FIRST: its first
 ; byte is where BASIC's "SYS 2061" jumps.
 ; ---------------------------------------------------------------------------
 

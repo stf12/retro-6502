@@ -1,5 +1,7 @@
 ; ---------------------------------------------------------------------------
-; io_c64.s - calculator I/O for the Commodore 64, through the KERNAL ROM
+; c64/io.s - basic I/O for the Commodore 64, through the KERNAL ROM
+;
+; Shared by every program in apps/.
 ;
 ; CHRIN  ($FFCF): the first call lets the user type and edit a whole screen
 ;                 line; RETURN ends it. Each call then returns the next
