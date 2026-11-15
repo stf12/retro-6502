@@ -179,7 +179,9 @@ void shift_reset() {
 
 void shift_delay() {
 //   delayMicroseconds(1000);
-  delayMicroseconds(10);
+  // retro-6502: was 10 us. The address shift registers at 3.3 V need well
+  // under a microsecond per edge; reading one address waits 19 times.
+  delayMicroseconds(2);
 }
 void shift_load() {
   digitalWrite(SHIFT_SHIFT_ELSE_LOAD, 1);
@@ -252,15 +254,24 @@ void step_6502() {
   status_6502();
 }
 
+// retro-6502: the W65C02 is fully static and needs only nanoseconds between
+// clock edges and for the data bus to settle. Each digitalWrite already takes
+// a few microseconds, so a 5 us hold is still very generous.
+// Original value: 1000 us (1 ms), which capped the clock at about 500 Hz.
+const unsigned int HOLD_US = 5;
+
 void hold_6502() {
-  // 1ms hold time = 1k transitions / sec -> 500hz
-  delayMicroseconds(1000);
+  delayMicroseconds(HOLD_US);
   //status_6502();
 }
 
 void clock_6502() {
   hold_6502();
   digitalWrite(MOS_PIN_CLOCK, 0);
+  // retro-6502: on this falling edge the 6502 has latched the byte of a read
+  // cycle. Release the data bus now, so that if the next cycle is a write the
+  // 6502 is not fighting our outputs while it drives the bus.
+  data_mode(INPUT);
   hold_6502();
   digitalWrite(MOS_PIN_CLOCK, 1);
 }
