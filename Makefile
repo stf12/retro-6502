@@ -5,6 +5,7 @@
 #   c64/c64.mk           Commodore 64: hello world, VICE
 #   apple1/apple1.mk     Apple I: hello world, BASIC and programs in MAME
 #   apps/calc/calc.mk    the calculator, for Chiplab and C64
+#   firmware/firmware.mk firmware for the ATmega32U4 MCU on Chiplab board
 #
 # Run make from this folder: all paths are relative to it.
 # `make` alone builds the Chiplab hello world (build/hello.bin).
@@ -15,6 +16,7 @@ include chiplab/chiplab.mk
 include c64/c64.mk
 include apple1/apple1.mk
 include apps/calc/calc.mk
+include firmware/firmware.mk
 
 .DEFAULT_GOAL := all
 all: build/$(PROG).bin

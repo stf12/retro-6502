@@ -11,3 +11,6 @@ __pycache__/
 apple1/programs
 apple1/basic.bin 
 trace.txt
+
+# firmware
+firmware/backup/
