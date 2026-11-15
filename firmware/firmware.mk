@@ -34,12 +34,12 @@ fw-build:
 	arduino-cli compile --fqbn $(FQBN) --output-dir $(FW_BUILD) $(FW_SKETCH)
 
 # arduino-cli does the 1200 baud touch by itself for the Micro.
-# -v shows avrdude's full output, including the verify step.
+# -v shows avrdude's full output; --verify reads the flash back and compares.
 # Afterwards, check that the new firmware comes back on USB: once (2026-11)
 # the board stayed stuck after a good upload until a reset.
 fw-upload: fw-build
 	$(fw-port-check)
-	arduino-cli upload -v --fqbn $(FQBN) -p $(FW_PORT) --input-dir $(FW_BUILD) $(FW_SKETCH)
+	arduino-cli upload -v --verify --fqbn $(FQBN) -p $(FW_PORT) --input-dir $(FW_BUILD) $(FW_SKETCH)
 	@echo "Waiting for the board to come back..."; sleep 3; \
 	for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do \
 	  if ls /dev/cu.usbmodem* >/dev/null 2>&1; then \
