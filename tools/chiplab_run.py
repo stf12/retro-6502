@@ -19,11 +19,15 @@ Protocol (from the board firmware, newline-terminated text over USB):
   d<decimal> -> "d=0x48"              (put a byte on the data bus)
   x<decimal> -> like step             (0.2 only: d<decimal> + step in one)
 
+--trace-asm prints one disassembled line per instruction instead of one line
+per bus cycle (see asm_trace.py); it needs the board's sync=1 reports.
+
 With firmware 0.2, the byte for a read cycle is sent together with the next
 step ("x189"): one USB round trip per cycle instead of two. --no-fast forces
 the 0.1 protocol, to compare the two on the same firmware.
 """
 import argparse
+import os
 import sys
 
 import serial
@@ -113,7 +117,7 @@ def parse_status(line):
     for part in line.split():
         k, _, v = part.partition("=")
         f[k] = int(v, 0)
-    return f["a"], bool(f["r"]), f.get("d", 0)
+    return f["a"], bool(f["r"]), f.get("d", 0), bool(f.get("sync", 0))
 
 
 def main():
@@ -123,6 +127,12 @@ def main():
     ap.add_argument("--cycles", type=int, default=2000,
                     help="stop after this many cycles; 0 = no limit")
     ap.add_argument("--trace", action="store_true", help="print every bus cycle")
+    ap.add_argument("--trace-asm", action="store_true",
+                    help="print one disassembled line per instruction (needs py65)")
+    ap.add_argument("--labels", help="ld65 label file for --trace-asm "
+                    "(default: the image name with .lbl)")
+    ap.add_argument("--trace-out", help="write the --trace-asm output to this "
+                    "file instead of the terminal")
     ap.add_argument("--no-fast", action="store_true",
                     help="use the original protocol even with firmware 0.2")
     a = ap.parse_args()
@@ -131,6 +141,15 @@ def main():
     if len(mem) > 0x10000:
         sys.exit("Image larger than 64 KB.")
     mem += bytes(0x10000 - len(mem))
+
+    tracer = None
+    if a.trace_asm:
+        from asm_trace import AsmTracer, load_labels
+        labels = load_labels(a.labels or os.path.splitext(a.image)[0] + ".lbl")
+        out = open(a.trace_out, "w") if a.trace_out else sys.stderr
+        tracer = AsmTracer(mem, labels, out)
+        if a.trace_out:
+            print(f"[chiplab] disassembled trace -> {a.trace_out}", file=sys.stderr)
 
     port = find_port() if a.port == "auto" else a.port
     print(f"[chiplab] {port}", file=sys.stderr)
@@ -145,32 +164,42 @@ def main():
     cycle = 0
     try:
         while a.cycles == 0 or cycle < a.cycles:
-            if step(b, mem, cycle, a.trace):
+            if step(b, mem, cycle, a.trace, tracer):
                 return
             cycle += 1
     except KeyboardInterrupt:
+        if tracer:
+            tracer.flush()
         print(f"\n[chiplab] interrupted after {cycle} cycles", file=sys.stderr)
         return
+    if tracer:
+        tracer.flush()
     print(f"\n[chiplab] stopped after {a.cycles} cycles (no write to $F000)",
           file=sys.stderr)
 
 
-def step(b, mem, cycle, trace):
+def step(b, mem, cycle, trace, tracer=None):
     """One clock cycle. Returns True when the program wrote to EXIT."""
-    addr, is_read, data = parse_status(b.next_cycle())
+    addr, is_read, data, sync = parse_status(b.next_cycle())
     if is_read:
         val = next_key() if addr == KEYBOARD else mem[addr]
         if trace:
             print(f"{cycle:5d}  R ${addr:04X} -> ${val:02X}", file=sys.stderr)
+        if tracer:
+            tracer.cycle(cycle, addr, True, val, sync)
         b.answer_read(val)
         return False
     if trace:
         print(f"{cycle:5d}  W ${addr:04X} <- ${data:02X}", file=sys.stderr)
+    if tracer:
+        tracer.cycle(cycle, addr, False, data, sync)
     mem[addr] = data
     if addr == CONSOLE:
         sys.stdout.write(chr(data))
         sys.stdout.flush()
     elif addr == EXIT:
+        if tracer:
+            tracer.flush()
         print(f"\n[chiplab] program exited after {cycle + 1} cycles",
               file=sys.stderr)
         return True

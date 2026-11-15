@@ -26,7 +26,7 @@ setup: $(PY)
 
 $(PY):
 	python3 -m venv .venv
-	.venv/bin/pip install --quiet pyserial
+	.venv/bin/pip install --quiet pyserial py65
 
 clean:
 	rm -rf build

@@ -13,7 +13,7 @@ CALC_C64     := $(addprefix build/calc/c64/,$(CALC_SRC:.s=.o)) $(C64_IO)
 
 build/calc/chiplab/%.o: $(CALC_DIR)/%.s $(CALC_DIR)/calc.inc
 	@mkdir -p $(@D)
-	ca65 --cpu 65C02 -I $(CALC_DIR) -l $(@:.o=.lst) -o $@ $<
+	ca65 --cpu 65C02 -g -I $(CALC_DIR) -l $(@:.o=.lst) -o $@ $<
 
 build/calc/c64/%.o: $(CALC_DIR)/%.s $(CALC_DIR)/calc.inc
 	@mkdir -p $(@D)
@@ -33,10 +33,14 @@ calc-c64: build/calc-c64.prg
 calc-run: build/calc.bin $(PY)
 	$(PY) tools/chiplab_run.py --port $(PORT) --cycles 0 $<
 
+calc-trace-asm: build/calc.bin $(PY)
+	$(PY) tools/chiplab_run.py --port $(PORT) --cycles 0 --trace-asm \
+	  --trace-out build/calc.asm-trace.txt $<
+
 calc-c64-run: build/calc-c64.prg
 	$(call vice,$<)
 
 calc-trace: build/calc.bin $(PY)
 	$(PY) tools/chiplab_run.py --port $(PORT) --cycles 0 --trace $<
 
-.PHONY: calc calc-c64 calc-run calc-trace calc-c64-run
+.PHONY: calc calc-c64 calc-run calc-trace calc-trace-asm calc-c64-run

@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Chiplab: Build",
+      "label": "Chiplab · hello: build",
       "type": "shell",
       "command": "make",
       "group": { "kind": "build", "isDefault": true },
@@ -16,7 +16,7 @@
       }
     },
     {
-      "label": "Chiplab: Run on board",
+      "label": "Chiplab · hello: run",
       "type": "shell",
       "command": "make run",
       "group": { "kind": "test", "isDefault": true },
@@ -24,20 +24,34 @@
       "problemMatcher": []
     },
     {
-      "label": "Chiplab: Run with bus trace",
+      "label": "Chiplab · hello: run with bus trace",
       "type": "shell",
       "command": "make trace",
       "presentation": { "reveal": "always", "panel": "dedicated" },
       "problemMatcher": []
     },
     {
-      "label": "Chiplab: List serial ports",
+      "label": "Chiplab · hello: run with disassembled trace",
+      "type": "shell",
+      "command": "make trace-asm && code build/hello.asm-trace.txt",
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Chiplab · any .bin: disassembled trace…",
+      "type": "shell",
+      "command": "make trace-bin BIN=${input:chiplabBin} CYCLES=${input:traceCycles}",
+      "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Chiplab · board: list serial ports",
       "type": "shell",
       "command": "make ports",
       "problemMatcher": []
     },
     {
-      "label": "C64: Build .prg",
+      "label": "C64 · hello: build",
       "type": "shell",
       "command": "make c64",
       "problemMatcher": {
@@ -50,15 +64,15 @@
       }
     },
     {
-      "label": "C64: Run in VICE",
+      "label": "C64 · hello: run in VICE",
       "type": "shell",
       "command": "make c64-run",
       "problemMatcher": []
     },
     {
-      "label": "Calc: Build (Chiplab + C64)",
+      "label": "Chiplab · calc: build",
       "type": "shell",
-      "command": "make calc calc-c64",
+      "command": "make calc",
       "problemMatcher": {
         "owner": "ca65",
         "fileLocation": ["relative", "${workspaceFolder}"],
@@ -69,27 +83,47 @@
       }
     },
     {
-      "label": "Calc: Run on board",
+      "label": "C64 · calc: build",
+      "type": "shell",
+      "command": "make calc-c64",
+      "problemMatcher": {
+        "owner": "ca65",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.*)\\((\\d+)\\):\\s+(Error|Warning):\\s+(.*)$",
+          "file": 1, "line": 2, "severity": 3, "message": 4
+        }
+      }
+    },
+    {
+      "label": "Chiplab · calc: run",
       "type": "shell",
       "command": "make calc-run",
       "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
       "problemMatcher": []
     },
     {
-      "label": "Calc: Run with bus trace",
+      "label": "Chiplab · calc: run with bus trace",
       "type": "shell",
       "command": "make calc-trace 2> trace.txt",
       "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
       "problemMatcher": []
     },
     {
-      "label": "Calc: Run in VICE",
+      "label": "Chiplab · calc: run with disassembled trace",
+      "type": "shell",
+      "command": "make calc-trace-asm; code build/calc.asm-trace.txt",
+      "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "C64 · calc: run in VICE",
       "type": "shell",
       "command": "make calc-c64-run",
       "problemMatcher": []
     },
     {
-      "label": "Apple I: Build",
+      "label": "Apple I · hello: build",
       "type": "shell",
       "command": "make apple1",
       "problemMatcher": {
@@ -102,31 +136,31 @@
       }
     },
     {
-      "label": "Apple I: Run in terminal (quick check)",
+      "label": "Apple I · hello: run in terminal (quick check)",
       "type": "shell",
       "command": "make apple1-sim",
       "problemMatcher": []
     },
     {
-      "label": "Apple I: Run in MAME",
+      "label": "Apple I · hello: run in MAME",
       "type": "shell",
       "command": "make apple1-run",
       "problemMatcher": []
     },
     {
-      "label": "Apple I: BASIC",
+      "label": "Apple I · BASIC: start",
       "type": "shell",
       "command": "make basic-run",
       "problemMatcher": []
     },
     {
-      "label": "Apple I: BASIC program…",
+      "label": "Apple I · BASIC: type in a program…",
       "type": "shell",
       "command": "make basic-prog PROG=apple1/programs/${input:basicProg}",
       "problemMatcher": []
     },
     {
-      "label": "Apple I: Machine code program…",
+      "label": "Apple I · machine code: type in a program…",
       "type": "shell",
       "command": "make woz-prog ${input:wozProg}",
       "problemMatcher": []
@@ -134,6 +168,23 @@
   ],
 
   "inputs": [
+    {
+      "id": "chiplabBin",
+      "type": "promptString",
+      "description": "Chiplab image to trace (64 KB .bin, already built)",
+      "default": "build/hello.bin"
+    },
+    {
+      "id": "traceCycles",
+      "type": "pickString",
+      "description": "Stop after how many cycles?",
+      "options": [
+        { "label": "2,000 (a few seconds)", "value": "2000" },
+        { "label": "20,000 (about 25 s)", "value": "20000" },
+        { "label": "No limit (interactive programs, Ctrl-C stops)", "value": "0" }
+      ],
+      "default": "2000"
+    },
     {
       "id": "basicProg",
       "type": "pickString",

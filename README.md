@@ -63,16 +63,47 @@ make setup      # creates .venv with pyserial
 
 ## Daily use
 
+VS Code tasks are named *machine · program: action*, for example
+*Chiplab · calc: run with disassembled trace*. A name ending in "…"
+asks for input first.
+
 | VS Code                         | Terminal      | What it does                     |
 |---------------------------------|---------------|----------------------------------|
-| ⇧⌘B → *Chiplab: Build*          | `make`        | assemble + link `build/hello.bin`|
-| Tasks → *Chiplab: Run on board* | `make run`    | upload/run on the board          |
-| Tasks → *Run with bus trace*    | `make trace`  | same, printing every bus cycle   |
-| Tasks → *List serial ports*     | `make ports`  | find the board's device name     |
+| ⇧⌘B → *Chiplab · hello: build*  | `make`        | assemble + link `build/hello.bin`|
+| Tasks → *Chiplab · hello: run*  | `make run`    | upload/run on the board          |
+| Tasks → *Chiplab · hello: run with bus trace* | `make trace`  | same, printing every bus cycle   |
+| Tasks → *Chiplab · hello: run with disassembled trace* | `make trace-asm` | same, one disassembled line per instruction (see below) |
+| Tasks → *Chiplab · board: list serial ports* | `make ports`  | find the board's device name     |
 
 The port is auto-detected (`/dev/cu.usbmodem…` or `/dev/cu.usbserial-…`).
 Override with `make run PORT=/dev/cu.usbmodem1101`.
 Other programs: put `foo.s` in `chiplab/` and run `make run PROG=foo`.
+
+### Disassembled trace
+
+`make trace-asm` (and `make calc-trace-asm` for the calculator) runs the
+program and writes one line per instruction to `build/<program>.asm-trace.txt`,
+while the program's own output stays in the terminal. For any image already
+built, `make trace-bin BIN=build/calc.bin CYCLES=0` writes the trace next to
+it and opens it in VS Code; the task *Chiplab · any .bin: disassembled trace…*
+asks for the file and the number of cycles.
+
+```
+ cycle  address   label        bytes     instruction                bus
+  2327  $8154     @loop        4E 05 02  LSR $0205  ; num2+1        R $0205(num2+1)=$00  W $0205(num2+1)<-$00
+  2332  $8157                  6E 04 02  ROR $0204  ; num2          R $0204(num2)=$05  W $0204(num2)<-$02
+  2337  $815A                  90 10     BCC $816C  ; @shift
+```
+
+- Instruction starts come from the 6502's SYNC pin (`sync=1` from the board).
+  On a board that does not report it, the trace falls back to one line per
+  bus cycle after 64 cycles.
+- The **bus** column lists the instruction's other accesses: data reads and
+  writes, stack, dummy cycles. Operand bytes are not repeated.
+- Names come from the ld65 label file next to the image (`build/hello.lbl`),
+  as `name` or `name+offset`. Assemble with `-g` to include local labels.
+- Disassembly uses py65 (`make setup` installs it; in an existing venv:
+  `.venv/bin/pip install py65`). The code is in `tools/asm_trace.py`.
 
 Expected output:
 
@@ -91,8 +122,8 @@ routine CHROUT (`JSR $FFD2`), and `RTS` returns to BASIC.
 
 | VS Code                  | Terminal       | What it does                         |
 |--------------------------|----------------|--------------------------------------|
-| Tasks → *C64: Build .prg*| `make c64`     | builds `build/hello-c64.prg`         |
-| Tasks → *C64: Run in VICE* | `make c64-run` | opens it in the VICE emulator      |
+| Tasks → *C64 · hello: build* | `make c64`     | builds `build/hello-c64.prg`         |
+| Tasks → *C64 · hello: run in VICE* | `make c64-run` | opens it in the VICE emulator      |
 
 The .prg includes a BASIC line `SYS 2061`, so it starts with a plain `RUN`.
 
@@ -122,9 +153,11 @@ build is assembled as 6502, so a 65C02-only instruction would be an error.
 
 | VS Code | Terminal | What it does |
 |---|---|---|
-| Tasks → *Calc: Build (Chiplab + C64)* | `make calc calc-c64` | builds `build/calc.bin` and `build/calc-c64.prg` |
-| Tasks → *Calc: Run on board* | `make calc-run` | runs on the Chiplab, no cycle limit (Ctrl-C stops) |
-| Tasks → *Calc: Run in VICE* | `make calc-c64-run` | opens the C64 version in VICE |
+| Tasks → *Chiplab · calc: build* | `make calc` | builds `build/calc.bin` |
+| Tasks → *C64 · calc: build* | `make calc-c64` | builds `build/calc-c64.prg` |
+| Tasks → *Chiplab · calc: run* | `make calc-run` | runs on the Chiplab, no cycle limit (Ctrl-C stops) |
+| Tasks → *Chiplab · calc: run with disassembled trace* | `make calc-trace-asm` | same, trace in `build/calc.asm-trace.txt` |
+| Tasks → *C64 · calc: run in VICE* | `make calc-c64-run` | opens the C64 version in VICE |
 
 On the Chiplab each line takes roughly 10-25 s (about 1,500-3,500 cycles
 at ~170 cycles/s): turning numbers into text and back costs more than the
@@ -139,9 +172,9 @@ with `JMP $FF1F`. UPPERCASE only: the Apple I has no lowercase.
 
 | VS Code                            | Terminal           | What it does |
 |------------------------------------|--------------------|--------------|
-| Tasks → *Apple I: Build*           | `make apple1`      | builds `build/hello-apple1.bin` and `.woz`, prints the hex to type |
-| Tasks → *Apple I: Run in terminal* | `make apple1-sim`  | runs it in py65 with a fake ECHO: instant check, no ROMs |
-| Tasks → *Apple I: Run in MAME*     | `make apple1-run`  | starts MAME's Apple I and types the program into the Woz Monitor |
+| Tasks → *Apple I · hello: build* | `make apple1`      | builds `build/hello-apple1.bin` and `.woz`, prints the hex to type |
+| Tasks → *Apple I · hello: run in terminal (quick check)* | `make apple1-sim`  | runs it in py65 with a fake ECHO: instant check, no ROMs |
+| Tasks → *Apple I · hello: run in MAME* | `make apple1-run`  | starts MAME's Apple I and types the program into the Woz Monitor |
 | —                                  | `make apple1-snap` | same, but loads it as a snapshot: starts instantly |
 
 - `apple1-sim` needs py65 in the project venv: `.venv/bin/pip install py65`.
@@ -180,9 +213,9 @@ ready-to-type programs: copy them to `apple1/programs/`.
 
 | VS Code                              | Terminal | What it does |
 |--------------------------------------|----------|--------------|
-| Tasks → *Apple I: BASIC*             | `make basic-run` | loads BASIC and starts it (`>` prompt) |
-| Tasks → *Apple I: BASIC program…*    | `make basic-prog PROG=apple1/programs/HAMURABI.txt` | starts BASIC, types the listing, then `RUN` |
-| Tasks → *Apple I: Machine code program…* | `make woz-prog PROG=apple1/programs/life.txt RUN=2000` | types Woz Monitor hex and runs it (`microchess.txt`: `RUN=300`) |
+| Tasks → *Apple I · BASIC: start* | `make basic-run` | loads BASIC and starts it (`>` prompt) |
+| Tasks → *Apple I · BASIC: type in a program…* | `make basic-prog PROG=apple1/programs/HAMURABI.txt` | starts BASIC, types the listing, then `RUN` |
+| Tasks → *Apple I · machine code: type in a program…* | `make woz-prog PROG=apple1/programs/life.txt RUN=2000` | types Woz Monitor hex and runs it (`microchess.txt`: `RUN=300`) |
 
 How it works:
 
