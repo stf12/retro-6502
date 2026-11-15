@@ -119,11 +119,26 @@ With the Caterina bootloader:
 - after a **reset** on the RESET pin, the bootloader stays active for about
   8 seconds before starting the firmware.
 
-The 6-pin ISP header next to the USB connector has, in the base board
-schematic (`base32u4`, J2): 1 GND, 2 Level, 3 SCK, 4 MOSI, 5 MISO, 6 RESET.
-GND and RESET are the **two end pins**, so tapping them together resets the
-chip whichever way the board is turned. This worked on the V2 board. Use a
-female–female jumper wire and avoid touching pin 2 (supply).
+The 6-pin ISP header next to the USB connector follows J2 of the base board
+schematic (`base32u4`). On the V2 board we checked it with a multimeter:
+
+| Pin | Position | Signal | Measured |
+|---|---|---|---|
+| 1 | nearest the USB connector | GND | continuity with W65C02 pin 21 (VSS) |
+| 2 | | Level = +5 V (USB VBUS) | 5.10 V |
+| 3 | | SCK | 1.2 V (unused input, floating) |
+| 4 | | MOSI | 1.2 V (unused input, floating) |
+| 5 | | MISO | 1.2 V (unused input, floating) |
+| 6 | farthest from the USB connector | RESET | 3.28 V; hundreds of kΩ to pin 2, so not a supply |
+
+Voltages were measured with the board on USB, against W65C02 pin 21; the
+W65C02 supply (pin 8) is 3.3 V. GND and RESET are the **two end pins**, so
+tapping them together resets the chip. Use a female–female jumper wire and
+avoid touching pin 2 (supply).
+
+The ATmega32U4 runs at 3.3 V, but pin 2 carries 5 V. A 5 V Arduino used as
+ISP programmer would drive SCK, MOSI and RESET above the chip's supply: use
+a 3.3 V programmer or a level shifter. Tapping RESET to GND is always safe.
 
 - **To just restart the firmware:** tap the two end pins together once,
   quickly, then move the wire away.
