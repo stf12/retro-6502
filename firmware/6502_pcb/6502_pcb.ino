@@ -102,7 +102,8 @@ void loop() {
 
     const char* resp = nullptr;
     switch(line[0]) {
-      case 'i': { resp = "6502_0.1"; }; break;
+      // retro-6502: 0.2 adds the 'x' command; all 0.1 commands still work.
+      case 'i': { resp = "6502_0.2"; }; break;
       case 'r' : {
         reset_6502();
         shift_reset();
@@ -117,6 +118,16 @@ void loop() {
         // sets the data bus
         data_6502(line);
         // io implicit
+      } break;
+      case 'x': {
+        // retro-6502: x189\n = 'd189' + 's' in one command: drive the byte
+        // for the pending read cycle, clock, and report the next cycle.
+        // One USB round trip per cycle instead of two.
+        uint8_t value;
+        if (parse_byte(line, &value)) {
+          data_set(value);
+          step_6502();
+        }
       } break;
       case 't' : {
         // status without step
@@ -142,7 +153,9 @@ void old_main() {
   }
 }
 
-void data_6502(const char* line) {
+// retro-6502: the decimal parsing of 'd' moved here, shared with 'x'.
+// Prints the same error messages as before and returns false on error.
+bool parse_byte(const char* line, uint8_t* value) {
   bool found = false;
   int32_t acc = 0;
   for(int i = 1; line[i] != '\0'; i++) {
@@ -155,19 +168,25 @@ void data_6502(const char* line) {
       } else {
         Serial.print("bad digit:");
         Serial.println(c);
-        return;
+        return false;
       }
     }
   }
   if (!found) {
     Serial.println("no newline, skipping data");
-  } else {
-    // set data bits
-    acc = acc & 0xFF;
-    data_set(acc);
-    Serial.print("d=0x");
-    Serial.println(acc, HEX);
+    return false;
+  }
+  *value = acc & 0xFF;
+  return true;
+}
 
+void data_6502(const char* line) {
+  uint8_t value;
+  if (parse_byte(line, &value)) {
+    // set data bits
+    data_set(value);
+    Serial.print("d=0x");
+    Serial.println(value, HEX);
   }
 }
 
@@ -230,22 +249,43 @@ uint8_t read_data() {
   return data;
 }
 
+// retro-6502: helpers to build the status line in a buffer.
+static char* put_str(char* p, const char* s) {
+  while (*s) *p++ = *s++;
+  return p;
+}
+
+// Uppercase hex without leading zeros, same as Serial.print(v, HEX).
+static char* put_hex(char* p, uint16_t v) {
+  char digits[4];
+  int n = 0;
+  do {
+    uint8_t d = v & 0xF;
+    digits[n++] = d < 10 ? '0' + d : 'A' + d - 10;
+    v >>= 4;
+  } while (v);
+  while (n) *p++ = digits[--n];
+  return p;
+}
+
 void status_6502() {
   uint16_t addr = read_addr();
-  
+
   bool is_read = digitalRead(MOS_PIN_RWB);
-  Serial.print("a=0x");
-  Serial.print(addr, HEX);
-  Serial.print(" r=");
-  Serial.print(is_read);
+  // retro-6502: same text as before ("a=0x8002 r=1 sync=1"), but built in a
+  // buffer and sent with a single Serial.write: one USB packet instead of
+  // up to eight separate Serial.print calls.
+  char buf[40];
+  char* p = put_str(buf, "a=0x");
+  p = put_hex(p, addr);
+  p = put_str(p, is_read ? " r=1" : " r=0");
   if (!is_read) {
-    Serial.print(" d=0x");
-    Serial.print(read_data(), HEX);
+    p = put_str(p, " d=0x");
+    p = put_hex(p, read_data());
   }
   bool is_sync = digitalRead(MOS_PIN_SYNC);
-  Serial.print(" sync=");
-  Serial.print(is_sync);
-  Serial.print("\n");
+  p = put_str(p, is_sync ? " sync=1\n" : " sync=0\n");
+  Serial.write(buf, p - buf);
 }
 
 void step_6502() {
