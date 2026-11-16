@@ -10,6 +10,8 @@ memory-mapped "devices" handled on the host side:
   $F004  KEYBOARD - each read returns the next character of a line typed
                     on the Mac (waits for a line; the line ends with CR $0D)
   $F000  EXIT     - a write here ends the run
+  $F010-$F03F GFX - the graphics chip of docs/gfx-chip.md (gfx_chip.py):
+                    a 320x200 window opens at the first access
 
 Protocol (from the board firmware, newline-terminated text over USB):
   info  -> "6502_0.1" (original) or "6502_0.2" (retro-6502 firmware)
@@ -36,6 +38,7 @@ import serial.tools.list_ports
 CONSOLE = 0xF001
 KEYBOARD = 0xF004
 EXIT = 0xF000
+PUMP_EVERY = 64     # cycles between two checks of the GFX window
 
 _keys = []
 
@@ -135,6 +138,11 @@ def main():
                     "file instead of the terminal")
     ap.add_argument("--no-fast", action="store_true",
                     help="use the original protocol even with firmware 0.2")
+    ap.add_argument("--gfx-scale", type=int, default=3,
+                    help="size of a GFX pixel in the window (default 3)")
+    ap.add_argument("--gfx-png", help="save the GFX screen to this PNG at the end")
+    ap.add_argument("--no-gfx-window", action="store_true",
+                    help="emulate the GFX chip without opening a window")
     a = ap.parse_args()
 
     mem = bytearray(open(a.image, "rb").read())
@@ -151,6 +159,9 @@ def main():
         if a.trace_out:
             print(f"[chiplab] disassembled trace -> {a.trace_out}", file=sys.stderr)
 
+    from gfx_chip import GfxChip
+    gfx = GfxChip(scale=a.gfx_scale, window=not a.no_gfx_window)
+
     port = find_port() if a.port == "auto" else a.port
     print(f"[chiplab] {port}", file=sys.stderr)
     b = Board(port, a.trace)
@@ -161,12 +172,29 @@ def main():
     while b.readline() != "reset.":
         pass
 
+    try:
+        run(a, b, mem, tracer, gfx)
+    finally:
+        if gfx.used:
+            if a.gfx_png:
+                gfx.save_png(a.gfx_png)
+                print(f"[gfx] screen saved to {a.gfx_png}", file=sys.stderr)
+            gfx.finish()
+
+
+def run(a, b, mem, tracer, gfx):
     cycle = 0
     try:
         while a.cycles == 0 or cycle < a.cycles:
-            if step(b, mem, cycle, a.trace, tracer):
+            if step(b, mem, cycle, a.trace, tracer, gfx):
                 return
             cycle += 1
+            if cycle % PUMP_EVERY == 0 and not gfx.pump():
+                if tracer:
+                    tracer.flush()
+                print(f"\n[chiplab] GFX window closed after {cycle} cycles",
+                      file=sys.stderr)
+                return
     except KeyboardInterrupt:
         if tracer:
             tracer.flush()
@@ -178,11 +206,16 @@ def main():
           file=sys.stderr)
 
 
-def step(b, mem, cycle, trace, tracer=None):
+def step(b, mem, cycle, trace, tracer=None, gfx=None):
     """One clock cycle. Returns True when the program wrote to EXIT."""
     addr, is_read, data, sync = parse_status(b.next_cycle())
     if is_read:
-        val = next_key() if addr == KEYBOARD else mem[addr]
+        if addr == KEYBOARD:
+            val = next_key()
+        elif gfx and gfx.owns(addr):
+            val = gfx.read(addr)
+        else:
+            val = mem[addr]
         if trace:
             print(f"{cycle:5d}  R ${addr:04X} -> ${val:02X}", file=sys.stderr)
         if tracer:
@@ -194,7 +227,11 @@ def step(b, mem, cycle, trace, tracer=None):
     if tracer:
         tracer.cycle(cycle, addr, False, data, sync)
     mem[addr] = data
-    if addr == CONSOLE:
+    if gfx and gfx.owns(addr):
+        # Drawing happens here, before the cycle is answered: the 6502
+        # waits, so a command takes no extra cycles (docs/gfx-chip.md).
+        gfx.write(addr, data)
+    elif addr == CONSOLE:
         sys.stdout.write(chr(data))
         sys.stdout.flush()
     elif addr == EXIT:

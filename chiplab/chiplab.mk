@@ -7,12 +7,17 @@
 #                         disassembled trace of any Chiplab image, written
 #                         next to it (build/calc.asm-trace.txt)
 #   make run PROG=foo     build and run chiplab/foo.s instead
+#   make run PROG=gfxtest CYCLES=0 [GFX_PNG=build/screen.png]
+#                         GFX chip test picture (docs/gfx-chip.md); GFX_PNG
+#                         also saves the final screen
 #   make ports            list the serial ports
 
 PROG    ?= hello
 PORT    ?= auto
 CYCLES  ?= 2000
 CHIPLAB_CFG := chiplab/chiplab.cfg
+GFX_PNG ?=
+GFX_ARGS = $(if $(GFX_PNG),--gfx-png $(GFX_PNG))
 
 # Single-file programs in chiplab/
 build/%.o: chiplab/%.s
@@ -31,7 +36,7 @@ $(CHIPLAB_IO): chiplab/io.s
 	ca65 --cpu 65C02 -g -l $(@:.o=.lst) -o $@ $<
 
 run: build/$(PROG).bin $(PY)
-	$(PY) tools/chiplab_run.py --port $(PORT) --cycles $(CYCLES) $<
+	$(PY) tools/chiplab_run.py --port $(PORT) --cycles $(CYCLES) $(GFX_ARGS) $<
 
 trace: build/$(PROG).bin $(PY)
 	$(PY) tools/chiplab_run.py --port $(PORT) --cycles $(CYCLES) --trace $<

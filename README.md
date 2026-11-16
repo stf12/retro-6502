@@ -7,13 +7,13 @@ board, the **Commodore 64** and the **Apple I** (in MAME). Built on macOS
 ## Layout
 
 ```
-chiplab/     Chiplab board: hello.s, chiplab.cfg (memory map), io.s, chiplab.mk
+chiplab/     Chiplab board: hello.s, gfxtest.s, chiplab.cfg (memory map), io.s, chiplab.mk
 c64/         Commodore 64:  hello.s, io.s, c64.mk
 apple1/      Apple I:       hello.s, apple1.cfg, apple1.mk, programs/
 apps/        programs for more than one machine
   calc/      16-bit calculator: portable code + calc.mk
-tools/       host tools: chiplab_run.py, Apple I converters and simulator
-docs/        notes, e.g. the Chiplab programming model
+tools/       host tools: chiplab_run.py, gfx_chip.py, Apple I converters and simulator
+docs/        notes, e.g. the Chiplab programming model and the GFX chip
 Makefile     includes the .mk files above; run make from this folder
 ```
 
@@ -58,7 +58,7 @@ Then open this folder in VS Code (`code .`), accept the recommended
 extensions, and in the terminal run once:
 
 ```bash
-make setup      # creates .venv with pyserial
+make setup      # creates .venv with pyserial, py65 and pygame-ce
 ```
 
 ## Daily use
@@ -113,6 +113,22 @@ Hello, World!
 
 [chiplab] program exited after ~200 cycles
 ```
+
+### GFX chip
+
+The Chiplab can also draw: `tools/gfx_chip.py` emulates a graphics chip
+with registers at `$F010-$F03F` and a 320x200 screen with the 16 C64
+colours, shown in a window on the Mac. The registers, commands and exact
+behaviour are in [docs/gfx-chip.md](docs/gfx-chip.md).
+
+```bash
+make run PROG=gfxtest CYCLES=0                         # test picture
+make run PROG=gfxtest CYCLES=0 GFX_PNG=build/gfx.png   # also save it
+```
+
+The window opens at the first access to a GFX register, so text programs
+never open one, and stays open after the program ends: close it or press
+Esc. VS Code task: *Chiplab · gfxtest: run*.
 
 ## Commodore 64 version
 

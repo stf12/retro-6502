@@ -21,12 +21,16 @@ include firmware/firmware.mk
 .DEFAULT_GOAL := all
 all: build/$(PROG).bin
 
-# Python environment for the host tools (pyserial)
+# Python environment for the host tools. `make setup` always runs pip, so
+# packages added to PY_PACKAGES later reach an existing .venv too.
+PY_PACKAGES := pyserial py65 pygame-ce
+
 setup: $(PY)
+	.venv/bin/pip install --quiet $(PY_PACKAGES)
 
 $(PY):
 	python3 -m venv .venv
-	.venv/bin/pip install --quiet pyserial py65
+	.venv/bin/pip install --quiet $(PY_PACKAGES)
 
 clean:
 	rm -rf build

@@ -38,6 +38,13 @@
       "problemMatcher": []
     },
     {
+      "label": "Chiplab · gfxtest: run",
+      "type": "shell",
+      "command": "make run PROG=gfxtest CYCLES=0",
+      "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
       "label": "Chiplab · any .bin: disassembled trace…",
       "type": "shell",
       "command": "make trace-bin BIN=${input:chiplabBin} CYCLES=${input:traceCycles}",
