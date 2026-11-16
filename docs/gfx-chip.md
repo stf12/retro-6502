@@ -27,6 +27,8 @@ programs that call the library do not change.
 Unlike a real C64, every pixel can have any of the 16 colours: there is no
 2-colours-per-8×8-cell limit.
 
+![What the chip can draw: chiplab/window.s](images/window-demo.png)
+
 ## Register map
 
 | Address       | Name      | Access | Size    | Meaning |

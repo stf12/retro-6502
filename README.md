@@ -147,6 +147,12 @@ routines change only A, and leave the `gfx_*` variables as they are.
 | Tasks → *Chiplab · gfxtest: run* | `make run PROG=gfxtest CYCLES=0` | every routine: colours, lines, circles, XOR, clipping |
 | Tasks → *Chiplab · window: run* | `make run PROG=window CYCLES=0` | a Macintosh Classic style window, its content clipped |
 
+![The window demo: a Macintosh Classic style window with a 6502 chip drawn over rainbow rings](docs/images/window-demo.png)
+
+*`chiplab/window.s` drawn by the Chiplab's 6502: every shape is a call
+to the graphics library, the "6502" lettering is a table of rectangles,
+and the rings are cut at the window's edge by the clip rectangle.*
+
 Add `GFX_PNG=build/screen.png` to save the final screen. The window opens
 at the first access to the graphics, so text programs never open one, and
 stays open after the program ends: close it or press Esc.
