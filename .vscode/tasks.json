@@ -45,6 +45,13 @@
       "problemMatcher": []
     },
     {
+      "label": "Chiplab · window: run",
+      "type": "shell",
+      "command": "make run PROG=window CYCLES=0",
+      "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
       "label": "Chiplab · any .bin: disassembled trace…",
       "type": "shell",
       "command": "make trace-bin BIN=${input:chiplabBin} CYCLES=${input:traceCycles}",

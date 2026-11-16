@@ -9,10 +9,11 @@ Like the console at `$F001`, the chip exists only on the Mac: the Chiplab
 board has no memory or I/O of its own, so every access to these addresses
 reaches the host script, which answers it.
 
-Programs are not expected to use the registers directly: the `gfx.s`
-library wraps them in routines (`draw_line`, `fill_rect`, …). The registers
-are the contract between `gfx.s` and the host, and may grow in later
-versions; programs that call `gfx.s` do not change.
+Programs are not expected to use the registers directly: the graphics
+library (interface `lib/gfx.inc`, Chiplab version `chiplab/gfx.s`) wraps
+them in routines (`draw_line`, `fill_rect`, …). The registers are the
+contract between `gfx.s` and the host, and may grow in later versions;
+programs that call the library do not change.
 
 ## Screen
 

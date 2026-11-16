@@ -7,9 +7,11 @@ board, the **Commodore 64** and the **Apple I** (in MAME). Built on macOS
 ## Layout
 
 ```
-chiplab/     Chiplab board: hello.s, gfxtest.s, chiplab.cfg (memory map), io.s, chiplab.mk
+chiplab/     Chiplab board: hello.s, gfxtest.s, window.s, chiplab.cfg (memory map),
+             io.s, gfx.s, chiplab.mk
 c64/         Commodore 64:  hello.s, io.s, c64.mk
 apple1/      Apple I:       hello.s, apple1.cfg, apple1.mk, programs/
+lib/         library interfaces shared by all machines: gfx.inc
 apps/        programs for more than one machine
   calc/      16-bit calculator: portable code + calc.mk
 tools/       host tools: chiplab_run.py, gfx_chip.py, Apple I converters and simulator
@@ -114,21 +116,44 @@ Hello, World!
 [chiplab] program exited after ~200 cycles
 ```
 
-### GFX chip
+### Graphics
 
 The Chiplab can also draw: `tools/gfx_chip.py` emulates a graphics chip
-with registers at `$F010-$F03F` and a 320x200 screen with the 16 C64
-colours, shown in a window on the Mac. The registers, commands and exact
-behaviour are in [docs/gfx-chip.md](docs/gfx-chip.md).
+with a 320x200 screen and the 16 C64 colours, shown in a window on the
+Mac. Programs use the graphics library: the interface is
+[lib/gfx.inc](lib/gfx.inc), the Chiplab implementation `chiplab/gfx.s`.
 
-```bash
-make run PROG=gfxtest CYCLES=0                         # test picture
-make run PROG=gfxtest CYCLES=0 GFX_PNG=build/gfx.png   # also save it
+```asm
+        .include "gfx.inc"
+        jsr gfx_init
+        PAPER BLUE
+        jsr clear_screen
+        PEN YELLOW
+        LINE 10, 20, 300, 150           ; macro: constant values
+        lda radius                      ; computed values: store the
+        sta gfx_r                       ; gfx_* variables yourself
+        stz gfx_r+1
+        jsr draw_circle
 ```
 
-The window opens at the first access to a GFX register, so text programs
-never open one, and stays open after the program ends: close it or press
-Esc. VS Code task: *Chiplab · gfxtest: run*.
+Parameters go in the `gfx_*` variables, 16 bit, low byte first; on the
+Chiplab they are the chip's own registers, so nothing is copied. The
+routines change only A, and leave the `gfx_*` variables as they are.
+`lib/gfx.inc` lists every routine; the chip itself is described in
+[docs/gfx-chip.md](docs/gfx-chip.md).
+
+| VS Code | Terminal | What it draws |
+|---|---|---|
+| Tasks → *Chiplab · gfxtest: run* | `make run PROG=gfxtest CYCLES=0` | every routine: colours, lines, circles, XOR, clipping |
+| Tasks → *Chiplab · window: run* | `make run PROG=window CYCLES=0` | a Macintosh Classic style window, its content clipped |
+
+Add `GFX_PNG=build/screen.png` to save the final screen. The window opens
+at the first access to the graphics, so text programs never open one, and
+stays open after the program ends: close it or press Esc.
+
+Single-file programs in `chiplab/` are linked with the library
+(`build/chiplab/chiplab.lib`, made with `ar65`): ld65 takes only the
+modules a program uses, so `hello.bin` gets no graphics code.
 
 ## Commodore 64 version
 

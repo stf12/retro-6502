@@ -8,8 +8,8 @@
 #                         next to it (build/calc.asm-trace.txt)
 #   make run PROG=foo     build and run chiplab/foo.s instead
 #   make run PROG=gfxtest CYCLES=0 [GFX_PNG=build/screen.png]
-#                         GFX chip test picture (docs/gfx-chip.md); GFX_PNG
-#                         also saves the final screen
+#                         graphics test picture (window.s: a Mac-style
+#                         window); GFX_PNG also saves the final screen
 #   make ports            list the serial ports
 
 PROG    ?= hello
@@ -19,21 +19,33 @@ CHIPLAB_CFG := chiplab/chiplab.cfg
 GFX_PNG ?=
 GFX_ARGS = $(if $(GFX_PNG),--gfx-png $(GFX_PNG))
 
-# Single-file programs in chiplab/
-build/%.o: chiplab/%.s
-	@mkdir -p build
-	ca65 --cpu 65C02 -g -l build/$*.lst -o $@ $<
+# Libraries for Chiplab programs, interfaces in lib/ (gfx.inc). Packed with
+# ar65: ld65 takes from a library only the modules a program uses, so a
+# program that draws nothing gets no graphics code.
+CHIPLAB_LIB := build/chiplab/chiplab.lib
+CHIPLAB_LIB_SRC := chiplab/gfx.s
 
-build/%.bin: build/%.o $(CHIPLAB_CFG)
-	ld65 -C $(CHIPLAB_CFG) -m build/$*.map -Ln build/$*.lbl -o $@ $<
+build/chiplab/%.o: chiplab/%.s lib/gfx.inc
+	@mkdir -p $(@D)
+	ca65 --cpu 65C02 -g -I lib -l $(@:.o=.lst) -o $@ $<
+
+$(CHIPLAB_LIB): $(patsubst chiplab/%.s,build/chiplab/%.o,$(CHIPLAB_LIB_SRC))
+	rm -f $@
+	ar65 a $@ $^
+
+# Single-file programs in chiplab/
+build/%.o: chiplab/%.s lib/gfx.inc
+	@mkdir -p build
+	ca65 --cpu 65C02 -g -I lib -l build/$*.lst -o $@ $<
+
+build/%.bin: build/%.o $(CHIPLAB_CFG) $(CHIPLAB_LIB)
+	ld65 -C $(CHIPLAB_CFG) -m build/$*.map -Ln build/$*.lbl -o $@ $< $(CHIPLAB_LIB)
 	@echo "Built $@ ($$(wc -c < $@ | tr -d ' ') bytes)"
 
 # Shared I/O for the programs in apps/ (keyboard, console, exit, reset)
 CHIPLAB_IO := build/chiplab/io.o
 
-$(CHIPLAB_IO): chiplab/io.s
-	@mkdir -p $(@D)
-	ca65 --cpu 65C02 -g -l $(@:.o=.lst) -o $@ $<
+# (built by the build/chiplab/%.o rule above)
 
 run: build/$(PROG).bin $(PY)
 	$(PY) tools/chiplab_run.py --port $(PORT) --cycles $(CYCLES) $(GFX_ARGS) $<
