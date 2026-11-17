@@ -38,7 +38,9 @@ So "printing" is a host-side convention defined in this project:
 | `$F001` | CONSOLE | byte written → printed as a character    |
 | `$F000` | EXIT    | any write → the run stops cleanly        |
 
-Code lives at `$8000`, vectors at `$FFFA–$FFFF`.
+Code lives at `$8000`, vectors at `$FFFA–$FFFF`. How the Mac and the board
+exchange each clock cycle, with a timing diagram:
+[docs/chiplab-bus-protocol.md](docs/chiplab-bus-protocol.md).
 
 ## One-time setup (iMac M1)
 

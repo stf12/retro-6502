@@ -94,6 +94,9 @@ latched the byte. It adds 6 bytes to the firmware (5508 → 5514).
 
 ## Step 2: protocol 0.2, one round trip per cycle
 
+(The host side and a timing diagram of each cycle are in
+[chiplab-bus-protocol.md](chiplab-bus-protocol.md).)
+
 After step 1, a cycle took about 2 ms, almost all of it USB round trips.
 Each round trip costs about a millisecond whatever is sent, and a read cycle
 needed two:
