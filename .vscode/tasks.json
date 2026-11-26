@@ -137,6 +137,25 @@
       "problemMatcher": []
     },
     {
+      "label": "C64 · sidpiano: build",
+      "type": "shell",
+      "command": "make sidpiano",
+      "problemMatcher": {
+        "owner": "ca65",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.*)\\((\\d+)\\):\\s+(Error|Warning):\\s+(.*)$",
+          "file": 1, "line": 2, "severity": 3, "message": 4
+        }
+      }
+    },
+    {
+      "label": "C64 · sidpiano: run in VICE",
+      "type": "shell",
+      "command": "make sidpiano-run",
+      "problemMatcher": []
+    },
+    {
       "label": "Apple I · hello: build",
       "type": "shell",
       "command": "make apple1",
